@@ -1,0 +1,530 @@
+#!/bin/bash
+#Consulta el iching en bash v.1.0
+
+array=()
+Trigrama=()
+
+#Web para buscar la info del hexagrama a mostrar
+WEB='https://www.adivinario.com'
+
+
+#COLORES
+W="\033[41m"
+V="\033[42m"
+NC="\033[0m"
+ROJO="\033[91m"
+VERDE="\033[92m"
+AMA="\33[93m"
+
+
+#ayuda al usuario sobre como funciona el i ching
+function ayuda(){
+clear
+cat <<EOF
+I CHING - CONOCE TU DESTINO de LOLA RODRIGUEZ
+=============================================
+El I Ching es un método de adivinación popular en la China. Se trata de hacer una
+pregunta y lanzar 3 monedas al aire. Estas tres monedas dan un resulta dependiendo si
+son cara (3) o cruz (2). Se  hacen 6 tiradas. Cada valor de cada tirada puede tener los
+siguientes valores:
+
+6 → = =
+7 → ___
+8 → = =
+9 → ___
+
+Estos 6 valores corresponderan al hexagrama principal. Se puede obtener el hexagrama
+complementario cambiando los valores que han salido del 6 por el 9 y el 9 por el 6 
+generando un nuevo hexagrama.
+
+Los 3 primeros valores del resultado corresponden al trigrama inferior mientras que los tres
+últimos valores corresponden al trigrama superior. Una vez se han realizado 6 lanzamientos se debe
+de revisar el trigrama inferior y el trigrama superior que nos da el sistema y buscar el número
+que corresponde en la tabla matrix. El número nos proporcionará la respuesta a la pregunta proporcionada.
+
+
+Los ocho trigramas presentes en el I Ching sonlos siguientes, y representan unos principios determinados:
+
+ELEMENTO	SÍMBOLO		SIGNIFICADO		NOMBRE
+_________________________________________________________________
+
+		 		Yang absoluto
+		  ___		Lo Masculino
+  Cielo		  ___		Creatividad |Conquista	Ch'ien
+		  ___		Muerte |Derivación	
+				Padre
+
+__________________________________________________________________
+
+				Yang
+		  _ _		Movimiento
+  Trueno	  _ _		Impulso | Procreación  	Chen
+  		  ___		Nacimiento
+		 		Hijo mayor
+
+__________________________________________________________________
+
+				Yin
+		  _ _		Peligro
+  Agua		  ___		Ansia | Frío |Fluir	K'an
+		  _ _		Embrión
+				Segundo hijo
+
+__________________________________________________________________
+
+		  		Yin
+		  ___		Estabilidad
+  Montaña	  _ _		Inamovible | Confianza	Ken
+		  _ _		Madurez
+		  		Tercer hijo
+
+__________________________________________________________________
+
+				Yin
+		  _ _		Pequeño Yin
+  Tierra	  _ _		Lo femenino		K'un
+		  _ _		Receptivo | Servir	
+				Madre
+
+__________________________________________________________________
+
+				Yin
+		  ___		Sensibilidad
+  Viento	  ___		Madurar | Receptividad	Sun
+		  _ _		Persistencia
+				Hija Mayor
+
+__________________________________________________________________
+
+				Yang
+		  ___		Luminosidad
+  Fuego		  _ _ 	        Inteligencia|Dependencia  Li
+		  ___		Concepción
+				Segunda Hija
+
+__________________________________________________________________
+
+				Yang
+		  _ _		Alegría
+  Lago		  ___		Cambio | Felicidad	  Tui
+		  ___		Tranquilidad | Disfrute
+				Tercera hija
+
+__________________________________________________________________
+
+EOF
+
+read -p "Pulsa la tecla INTRO para continuar"
+}
+
+#=============================================
+#enlaza a la página del hexagrama en internet
+#=============================================
+function consulta(){
+clear
+printf "CONSULTA EL HEXAGRAMA EN LA WEB $WEB\n${ROJO}Si deseas que se te abra el \
+navegador, por favor\npon el número de hexagrama + w.${NC} Por ejemplo ${VERDE}2w${NC}\n\n"
+read -p "Número de hexagrama a consultar: " OPT
+printf "\nconsultando hexagrama $OPT en ${WEB}...\n "
+
+#damos opción de abrir navegador o visualizar localmente conectandose remotamente
+
+if [ `echo "${OPT:(-1)}"` == 'w' ]; then
+  printf "\nAbriendo navegador...\n" 
+  x-www-browser "${WEB}"/i_ching_desc_${OPT%w}.php
+else
+
+#generamos la web en un buffer local |eliminamos los tags html | eliminamos todo lo anterior al titulo|
+#eliminamos el pie
+#curl https://www.adivinario.com/i_ching_desc_33.php |sed 's/<\/*[^>]*>//g' |sed '/^33./,$!d' |sed '/hexagrama anterior/,$d'g
+
+curl "${WEB}"/i_ching_desc_${OPT}.php |sed 's/<\/*[^>]*>//g'|sed '/conectados/,$!d' |sed '/hexagrama anterior/,$d' | tail -n +15 
+fi
+read -p "Pulsa la tecla INTRO para continuar"
+}
+
+
+
+#muestra los valores del hexagrama
+function mostrar_array(){
+unset Trigrama
+ for i in "${array[@]}";do
+  #printf "i es $i\n"
+  case $i in
+     6) Trigrama+=("= =") ;;
+     7) Trigrama+=("___") ;;
+     8) Trigrama+=("= =") ;;
+     9) Trigrama+=("___") ;;
+   esac
+done
+printf "\n${ROJO}El Hexagrama tiene ${#Trigrama[@]} valores\n\nANOTE ESTE TRIGRAMA EN UN PAPEL\ny consule los números \
+correspondientes en la tabla Matrix ${NC}\n\n"
+
+i=5
+while  [ $i -gt -1 ];do
+  if [ $i -gt 2 ]; then TIPO="${W}Hexagrama Superior${NC}"; else
+    TIPO="${V}Hexagrama Inferior${NC}"
+  fi
+   printf "${Trigrama[$i]}  $TIPO\n"
+  ((i--))
+done
+}
+
+function aleatorio(){
+unset array
+array=()
+for j in {1..6};do
+
+#3 tiradas
+   for i in {1..3}; do
+
+   #dígito aleatorio
+     R=`echo $RANDOM`
+     printf "Random es  $R\n"
+     #printf "\n$R\n"
+  
+    #cara o cruz
+    #cruz es 1 y cara 0 division del numero y según el resto solo puede ser 1 o 0
+     RAN=`echo "scale=0; ${R}%2" |bc`
+     printf "Resultado tirada $i es $R da RAN: $RAN\n"
+     #sleep 3.1416
+    if [ $RAN == 0 ]; then
+       VALOR=2
+      else
+       VALOR=3
+     fi 
+   TOTAL=$(($TOTAL+$VALOR))
+    printf "\nTotal en la tirada $i de $j es:  $TOTAL\n\n"
+   
+  done
+ array+=("$TOTAL")
+ TOTAL=0
+done
+printf "array es: ${array[*]}"
+mostrar_array
+read -p "Pulsa una tecla para continuar"
+}
+
+function agregar(){
+  clear
+  printf "\n${AMA}Haz una pregunta.\nLanza tres monedas al aire.\n\
+La cara es ${VERDE}YANG (___)${NC} ${AMA}y tiene valor ${VERDE}3${AMA}.\n\
+La cruz es ${ROJO}YING (- -) ${NC}${AMA}y tiene valor ${ROJO}2${AMA}.\n\
+Súma el valor dado por las tres monedas\ny agrega el valor \
+a continuación\n\n\
+Si desea el hexagrama complementario \
+\ncambie los resultados del hexagrama 6 por 9 y 9 por 6\n \
+obteniendo un nuevo hexagrama${NC}\n\n"
+
+
+unset VALOR
+array=()
+
+array=() 
+ for i in {1..6}; do
+   #limitamos los valores desde el 6 hasta el 9
+   until [[ $VALOR == +([6-9]) ]]; do 
+     read -r -p "Valor [6,7,8 o 9] del $i lanzamiento de un total de 6. CARA (3) CRUZ= (2): " VALOR
+   done
+    array+=($VALOR)
+    unset VALOR
+  done
+
+printf "array es: ${array[*]}\n"
+mostrar_array
+printf "\n"
+read -p "Pulsa INTRO para continuar"
+}
+
+function dibuja_matrix(){
+#revisar el minimo de pantalla
+
+if [ `tput cols` -lt '96' ]; then
+  printf "\nEs necesario un mínimo de 96 columnas para dibujar el hexagrama\
+          \nCambia la resolución del terminal y vuelve a intentar\n\n"
+else   
+ declare -A matrix
+ nfilas=45
+ ncol=12
+
+ f1="%$((${#nfilas}+1))s"
+ f2="%9s"
+
+matrix[0,0]="   "
+matrix[0,1]="Hex"
+matrix[0,2]="→  "
+matrix[0,3]="   "
+matrix[0,4]="| ___ |"
+matrix[0,5]="| = = |" 
+matrix[0,6]="| _ _ |"
+matrix[0,7]="| ___ |"
+matrix[0,8]="| _ _ |"
+matrix[0,9]="| ___ |"
+matrix[0,10]="| ___ |"
+matrix[0,11]="| _ _ |"
+matrix[1,0]="   "
+matrix[1,1]="Sup"
+matrix[1,2]="   "
+matrix[1,3]="   "
+matrix[1,4]="| ___ |"
+matrix[1,5]="| = = |"
+matrix[1,6]="| ___ |"
+matrix[1,7]="| _ _ |"
+matrix[1,8]="| _ _ |"
+matrix[1,9]="| ___ |"
+matrix[1,10]="| _ _ |"
+matrix[1,11]="| ___ |"
+matrix[2,0]="   "
+matrix[2,1]="   "
+matrix[2,2]="   "
+matrix[2,3]="   "
+matrix[2,4]="| ___ |"
+matrix[2,5]="| ___ |"
+matrix[2,6]="| _ _ |"
+matrix[2,7]="| _ _ |"
+matrix[2,8]="| _ _ |"
+matrix[2,9]="| _ _ |"
+matrix[2,10]="| ___ |"
+matrix[2,11]="| ___ |"
+matrix[3,0]="   "
+matrix[3,1]="Hex"
+matrix[3,2]="↓"
+matrix[3,3]="   "
+matrix[3,4]="   "
+matrix[4,0]="   "
+matrix[4,1]="Inf"
+matrix[4,2]="   "
+matrix[4,3]="   "
+matrix[4,4]="CIELO  "
+matrix[4,5]="TRUENO "
+matrix[4,6]="  AGUA "
+matrix[4,7]="MONTAÑA"
+matrix[4,8]=" TIERRA"
+matrix[4,9]=" VIENTO"
+matrix[4,10]=" FUEGO  "
+matrix[4,11]=" LAGO   "
+matrix[5,0]="     "
+matrix[6,0]=""
+matrix[6,1]=""
+matrix[6,2]=""
+matrix[6,1]="| ___ |"
+matrix[7,1]="| ___ |"
+matrix[8,1]="| ___ |"
+matrix[8,5]="     01 "
+matrix[8,6]="|    34 "
+matrix[8,7]="|   05  "
+matrix[8,8]="|  26  "
+matrix[8,9]="|  11  "
+matrix[8,10]="|  09  "
+matrix[8,11]="|  14  "
+matrix[8,12]="|  43  "
+matrix[9,1]="|CIELO|"
+
+matrix[10,3]="______"
+matrix[10,4]="_______"
+matrix[10,5]="_______"
+matrix[10,6]="_______"
+matrix[10,7]="_______"
+matrix[10,8]="_______"
+matrix[10,9]="_______"
+matrix[10,10]="________"
+matrix[10,11]="________"
+matrix[10,12]="___"
+matrix[11,1]="| _ _ |"
+matrix[12,1]="| _ _ |"
+matrix[13,1]="| ___ |"
+matrix[13,5]="    25  "
+matrix[13,6]="|    51 "
+matrix[13,7]="|   03  "
+matrix[13,8]="|  27  "
+matrix[13,9]="|  24  "
+matrix[13,10]="|  42  "
+matrix[13,11]="|  21  "
+matrix[13,12]="|  17  "
+matrix[14,1]="TRUENO|"
+matrix[15,3]="______"
+matrix[15,4]="_______"
+matrix[15,5]="_______"
+matrix[15,6]="_______"
+matrix[15,7]="_______"
+matrix[15,8]="_______"
+matrix[15,9]="_______"
+matrix[15,10]="________"
+matrix[15,11]="________"
+matrix[15,12]="___"
+
+matrix[16,1]="| _ _ |"
+matrix[17,1]="| ___ |"
+matrix[18,1]="| _ _ |"
+matrix[18,5]="    06  "
+matrix[18,6]="|    40 "
+matrix[18,7]="|   29  "
+matrix[18,8]="|  04  "
+matrix[18,9]="|  07  "
+matrix[18,10]="|  59  "
+matrix[18,11]="|  64  "
+matrix[18,12]="|  47  "
+matrix[19,1]="|AGUA |"
+matrix[20,3]="______"
+matrix[20,4]="_______"
+matrix[20,5]="_______"
+matrix[20,6]="_______"
+matrix[20,7]="_______"
+matrix[20,8]="_______"
+matrix[20,9]="_______"
+matrix[20,10]="________"
+matrix[20,11]="________"
+matrix[20,12]="___"
+
+matrix[21,1]="| ___ |"
+matrix[22,1]="| _ _ |"
+matrix[23,1]="| _ _ |"
+matrix[23,5]="    33  "
+matrix[23,6]="|    62 "
+matrix[23,7]="|   39  "
+matrix[23,8]="|  52  "
+matrix[23,9]="|  15  "
+matrix[23,10]="|  53  "
+matrix[23,11]="|  56  "
+matrix[23,12]="|  31  "
+matrix[24,1]="|MONTAÑA|"
+matrix[25,3]="______"
+matrix[25,4]="_______"
+matrix[25,5]="_______"
+matrix[25,6]="_______"
+matrix[25,7]="_______"
+matrix[25,8]="_______"
+matrix[25,9]="_______"
+matrix[25,10]="________"
+matrix[25,11]="________"
+matrix[25,12]="___"
+
+matrix[26,1]="| _ _ |"
+matrix[27,1]="| _ _ |"
+matrix[28,1]="| _ _ |"
+matrix[28,5]="    12  "
+matrix[28,6]="|    16 "
+matrix[28,7]="|   08  "
+matrix[28,8]="|  23  "
+matrix[28,9]="|  02  "
+matrix[28,10]="|  20  "
+matrix[28,11]="|  35  "
+matrix[28,12]="|  45  "
+matrix[29,1]="|TIERRA|"
+matrix[30,3]="______"
+matrix[30,4]="_______"
+matrix[30,5]="_______"
+matrix[30,6]="_______"
+matrix[30,7]="_______"
+matrix[30,8]="_______"
+matrix[30,9]="_______"
+matrix[30,10]="________"
+matrix[30,11]="________"
+matrix[30,12]="___"
+
+matrix[31,1]="| ___ |"
+matrix[32,1]="| ___ |"
+matrix[33,1]="| _ _ |"
+matrix[33,5]="    44  "
+matrix[33,6]="|    32 "
+matrix[33,7]="|   48  "
+matrix[33,8]="|  18  "
+matrix[33,9]="|  46  "
+matrix[33,10]="|  57  "
+matrix[33,11]="|  50  "
+matrix[33,12]="|  28  "
+matrix[34,1]="|VIENTO|"
+matrix[35,3]="______"
+matrix[35,4]="_______"
+matrix[35,5]="_______"
+matrix[35,6]="_______"
+matrix[35,7]="_______"
+matrix[35,8]="_______"
+matrix[35,9]="_______"
+matrix[35,10]="________"
+matrix[35,11]="________"
+matrix[35,12]="___"
+
+matrix[36,1]="| ___ |"
+matrix[37,1]="| _ _ |"
+matrix[38,1]="| ___ |"
+matrix[38,5]="    13  "
+matrix[38,6]="|    55 "
+matrix[38,7]="|   63  "
+matrix[38,8]="|  22  "
+matrix[38,9]="|  36  "
+matrix[38,10]="|  37  "
+matrix[38,11]="|  30  "
+matrix[38,12]="|  49  "
+matrix[39,1]="|FUEGO|"
+matrix[40,3]="______"
+matrix[40,4]="_______"
+matrix[40,5]="_______"
+matrix[40,6]="_______"
+matrix[40,7]="_______"
+matrix[40,8]="_______"
+matrix[40,9]="_______"
+matrix[40,10]="________"
+matrix[40,11]="________"
+matrix[40,12]="___"
+
+matrix[41,1]="| _ _ |"
+matrix[42,1]="| ___ |"
+matrix[43,1]="| ___ |"
+matrix[43,5]="    10  "
+matrix[43,6]="|    54 "
+matrix[43,7]="|   60  "
+matrix[43,8]="|  41  "
+matrix[43,9]="|  19  "
+matrix[43,10]="|  61  "
+matrix[43,11]="|  38  "
+matrix[43,12]="|  58  "
+matrix[44,1]="|LAGO|"
+matrix[45,3]="______"
+matrix[45,4]="_______"
+matrix[45,5]="_______"
+matrix[45,6]="_______"
+matrix[45,7]="_______"
+matrix[45,8]="_______"
+matrix[45,9]="_______"
+matrix[45,10]="________"
+matrix[45,11]="________"
+matrix[45,12]="___"
+
+clear
+printf "\n"
+for  ((j=0;j<=$nfilas;j++)); do
+    # printf  "$f1" "$j"
+  for ((i=0;i<=$ncol;i++)); do
+   # printf "$f2" $j $i ${matrix[$j,$i]}
+  printf "%s" " ${matrix[$j,$i]} " 
+   #sleep .2
+  done
+ printf "\n"
+done
+printf "\n"
+
+fi #final resolucion pantalla
+
+read -p "Pulsa la tecla INTRO para continuar"
+}
+
+#prog. principal
+
+
+while true; do
+clear
+printf "${VERDE}(p) Agregar Puntuaciones\n(a) Generar Aleatorio\n(d) Matrix\n(c) Consulta en Web del Hexagrama\n(h) Ayuda\n(s)salir?${NC} " && read -p "" OPT 
+  case $OPT in
+    p) agregar ;;
+    a) aleatorio ;;
+    d) dibuja_matrix ;;
+    c) consulta ;;
+    h) ayuda ;;
+    s) break ;; 
+   *) printf "opcion incorrecta" ;;
+    
+  esac
+done
+exit 0
+
