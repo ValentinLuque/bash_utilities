@@ -1,0 +1,16 @@
+#!/bin/bash
+#Utilidad que envia ficheros borrados a la papelera
+for arg
+  do
+     if [ "$arg" != "-Rf" ]; then 
+     printf "Enviando \"${arg}\" a la papelera de reciclaje ...\n" 
+     if [ -d $arg ]; then
+       cp -Rf "$arg" /home/${USER}/.local/share/Trash/files
+       rm -Rf "$arg"
+      else
+        cp "$arg" /home/${USER}/.local/share/Trash/files
+        rm "$arg" 
+     fi
+    fi
+  done
+exit 0
