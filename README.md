@@ -1,5 +1,5 @@
 # bash_utilities
-Utilidades para bash
+Utilities for bash - cp to /usr/local/bin
 
 iching - Iching in mode text for linux 
 
