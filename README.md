@@ -1,4 +1,5 @@
 # bash_utilities
 Utilidades para bash
-iching - utiliza el iching desde tu terminal linux
+iching - Iching in mode text for linux
+texcel - Minimalist Spreadsheet for Terminal Linux in mode text
 
