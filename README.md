@@ -3,7 +3,7 @@ Utilities for bash - cp to /usr/local/bin
 
 iching - Iching in mode text for linux 
 
-texcel - Minimalist Spreadsheet for Terminal Linux in mode text
+texcel - Minimalist Spreadsheet for Terminal Linux in mode text ATTENTION You need also texcel_adv.sh
 
 bak - create a cp file with date in one step in linux
 
