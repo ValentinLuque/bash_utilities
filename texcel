@@ -1,7 +1,13 @@
 #!/bin/bash
 #Hoja de Cálculo Minimalista y potente
 #Valentín Luque Mestanza 2023
-#Libre distribución | Considera nombrar la Autoría
+#valenti.luque@gmail.com
+#Utiliza cuidadosamente el agregar y eliminar filas y columnas
+#=====================================================================
+#ATTENTION LA FUNCION ADD ROW NEED TO MAKE 3 INTROS FOR REFRESH CHANGES
+#you need to download textel:adv.sh for create and delete rows and columns
+#=====================================================================
+#Libre distribución 
 
 #COLORES / colors
 CV="\033[42m"
@@ -21,6 +27,9 @@ CFUN="\033[91m$CSTRONG"
 
 #Num decimales
 NDECIMAL=2
+
+#BACKUP
+DBACK=".textel_backup"
 
 #Guarda el fichero
 function guarda(){
@@ -43,9 +52,6 @@ done
  [ $OPT == "s" ] && exit 0
 }
 
-#function calcula(){
-#  matrix[$F,$C]=$V
-#}
 
 
 function abrir(){
@@ -152,28 +158,35 @@ echo
   printf "$NC"
    if [[ $C == 'o' ]] ; then 
      posicion="tput cup $(expr `tput lines` - 4) 0"
-     $posicion  && printf "${COPT}| (0) +/- Col. Size  |(1) Add Col. As First | (2) Add Col. Whatever | (3) Del Col.\
-| (4) Add Row | (5) Del Row | (6) Print 2 File | (7) Sequence | (8) Bash | (9) Comments |(b) Bak. File\
+     $posicion  && printf "${COPT}| (0) +/- Col. Size  |\
+| (1) Col/ Rows Function | (6) Print 2 File | (7) Sequence | (8) Bash | (9) Comments | (b) Bak. File\
  |(r) Restore |(h) Help| (q) Exit $NC" \
 &&  read -p "Opt: " OPT
 
  case $OPT in
 
       0 ) size ;;
-      1 ) AddColumn0 ;;
-      2 ) AddColumn ;;
-      3 ) DelColumn ;;
-      4 ) AddRow ;;
-      5 ) DelRow ;;
-      6 ) Print "${1}";;
+      "10" ) AddColumnFirst "${1}" ;;
+      2 ) AddColumn "${1}" ;;
+      3 ) DelColumn "${1}" ;;
+      4 ) AddRow "${1}"  ;;
+      5 ) DelRow "${1}" ;;
+      6 ) Print "${1}" ;;
       7 ) Sequence "${1}" ;;    
       8 ) Bash "${1}" ;;
       9 ) Comments "${1}" ;;
-      r ) Restore "${1}" ;;
+      r ) recover "${1}" ;;
       b ) Backup "${1}" ;;
+      1 ) exec ./texcel_adv.sh "${1}" ;;
       h ) Help ;;
-      q ) exit 0 ;;
-      * ) F="" && C="" ;;
+#      u ) Undo "${1}" ;;
+      q ) read -p "Delete temp files?(y) " OPT
+           if  [[ $OPT == "y" ]]; then
+		 find ./"${DBACK}" -mtime -1 -iname "${1}*" -exec echo "Borrando:" {} \; -exec rm {} \;
+               # read -p "Intro"      
+
+	 fi && exit 0 ;;
+	 * ) F="" && C="" ;;
      esac
   else
     tput cup $(expr `tput lines` - 3) 0 && printf "$CROW" && read -p "ROW: " F && printf "$NC"
@@ -182,6 +195,7 @@ echo
   fi
 
 #cambiamos valor en fichero
+  
  cp "${1}" "${1}".bak
  awk -v f=$F -v c=$C -v v="${V}" -F: -v OFS=: 'NR==f {$c=v}1' "${1}".bak >"${1}"
 
@@ -195,7 +209,7 @@ function size(){
 
 #Crear ficheros .bak
 function Backup(){
- cp "${FICH}" "${FICH}".backup
+ cp "${1}" "${1}".backup
 }
 
 function funciones(){
@@ -267,51 +281,115 @@ esac
 fi
 }
 
+function backupt(){
+#crea una copia de los ultimos ficheros
+R=`date +%d%m%y_${RANDOM:0:3}`
+  if [ ! -d $DBACK  ]; then
+     mkdir "$DBACK"
+  fi
+  cp "${1}" ${DBACK}/"${1}_$R"
+  
+}
+
+#Restaura el ultimo fichero
+function recover(){
+cd "${DBACK}"
+#echo "$PWD"
+ls -lat |rev|cut -d" " -f1,2,3,4|rev >../recover.txt
+cd ..
+sed -i "1,3d" recover.txt
+cat -n recover.txt
+read -p "Chose File to Recover: " OPT
+FILE=`awk -v f=$OPT 'NR==f {print}' recover.txt`
+FILE=`echo $FILE |cut -d" " -f4`
+#printf "Fichero $FILE"
+#read -p "intro"
+cp "${DBACK}"/"${FILE}" "${1}"
+if [ $? -eq 1 ]; then
+ printf "Fallo en copia\n"
+ echo "${DBACK}"/"${FILE}"
+ printf "${1}" 
+ read -p "intro"
+fi 
+
+rm recover.txt  
+
+}
+
 #Agrega una columna al inicio de la MATRIX
-function AddColumn0(){
+function AddColumnFirst(){
+backupt "${1}"
 cp "${FICH}" "${FICH}".bak
 awk 'BEGIN {FS=OFS = ":"} {print "0",$0}' "${FICH}".bak>"${FICH}" 
 }
 
 #Agrega una columna en OTRO LUGAR DESPUES  de la MATRIX
 function AddColumn(){
+backupt "${1}"
 tput cup $(expr `tput lines` - 3) 0 ; tput dch 50
 tput cup $(expr `tput lines` - 2) 0 ; tput dch 50
 tput cup $(expr `tput lines` - 3) 0 && read -p "Insert 1 Column AFTER Column Nº?: " ACOL
-cp "${FICH}" "${FICH}".bak
-awk -v C=$ACOL 'BEGIN {FS=OFS=":"} {$C=$C FS (NR==1? "0":"0")} 1' "${FICH}".bak>"${FICH}" 
+cp "${1}" "${1}".bak
+#awk -v C=$ACOL  'BEGIN {FS=OFS=":"} {$C=$C FS (NR==1? "0":"0")} 1' "${FICH}".bak>"${FICH}" 
+awk -v C=$ACOL -v FS=":" -v OFS=":" '{$C=$C":"0}1' "${1}".bak>"${1}"
+#awk -v FS=":" -v OFS=":" '{$3=$3":"1}1' tutorial.txt
+
 }
 
 #Elimina una columna
 function DelColumn(){
-  cp "$FICH" "$FICH".bak
-  tput cup $(expr `tput lines` - 3) 0 ; tput dch 40
-  tput cup $(expr `tput lines` - 2) 0 ; tput dch 40 
-  tput cup $(expr `tput lines` - 3) 0 && read -p "Delete COLUMN Number ?: " ACOL
-  cut -d: -f$ACOL --complement "$FICH".bak >"$FICH"
+  backupt "${1}"
+  cp "${1}" "${1}".bak
+  tput cup $(expr `tput lines` - 3) 0 ; tput dch 100
+  tput cup $(expr `tput lines` - 2) 0 ; tput dch 100
+  tput cup $(expr `tput lines` - 3) 0 && read -p "Delete COLUMN Number ?: " DCOL
+  cut  -d: -f${DCOL} --complement  "${1}".bak >"${1}"
 }
 
 #Inserta una Fila
 function AddRow(){
+backupt "${1}"
+cad="0:"
 #Total columnas
- AROW=`head -1 "${FICH}" |sed 's/[^:]//g' |wc -c`
+ AROW=`head -1 "${1}" |sed 's/[^:]//g'`
+ AROW=${#AROW}
+ #printf "Arrow  $AROW "
 #cadena a agregar
- for ((i=1;i<$AROW;i++)) do cad="${cad}0:"; done
+ for ((i=1;i<$AROW;i++)); do
+    cad="${cad}0:";
+ done
+
+ #printf "Cad es $cad"
+
 #agregar columna
  read -p "Add ROW Number?: " NROW
+
 #controlar si es la última fila
- UFILA=`cat "$FICH"|wc -l`
- if [[ $NROW -gt $UFILA ]]; then
-  echo "$cad">>"$FICH"
- else 
-  sed -i.bak "${NROW}i${cad}" "${FICH}"
+ UFILA=`cat "${1}"|wc -l`
+if [ $NROW -lt $UFILA ] || [ $NROW -eq $UFILA ]; then 
+if [[ $NROW -eq $UFILA ]]; then
+  printf "$cad">>"${1}"
+ else
+  sed -i.bak "${NROW}i${cad}" "${1}"
 fi
+fi
+read -p "Press  INTROS to continue" O
 }
 
 #Elimina una columna
 function DelRow(){
-  read -p "Delete ROW Number?: " NROW
-  sed -i.bak "${NROW}d" "${FICH}"
+  backupt "${1}"
+ read -p "Delete ROW Number?: " NROW
+
+#si variable no esta vacia 
+if  [ ! -z $NROW  ]; then
+ 
+  if [ $NROW -eq 1 ]; then
+     sed -i.bak "1d" "${1}"
+   else
+     sed -i.bak "${NROW}d" "${1}"
+   fi
+fi
 }
 
 
@@ -450,7 +528,9 @@ function Restore(){
   cp "${1}".backup "${1}"  
 }
 
-
+function Undo(){
+  cp "${1}".bak "${1}"  
+}
 
 ##function main(){
 #  tput cup $(expr `tput lines` - 3) 0 && read -p "COLUMNA: (o → Opciones | CTRL + C → Exit):" C
@@ -515,7 +595,7 @@ columns automátically.
 	10.-)You can print in Human format if you want latter pass this to gnuplot or\
 whatever program o print directly. 
 	11 .-) You can create a file with comments about your spreedsheet
-
+	12.- ) You have back files when you chamge columns and rows
         Basically these are the functions that all people daily needs but in text mode.\
  The system not control buffer or scroll so if you have more that row terminal files \
 maybe the system is not functional but its why this that is minimalist and i want to put the \
