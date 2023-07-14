@@ -1,0 +1,522 @@
+#!/bin/bash
+#Hoja de Cálculo Minimalista y potente
+#Valentín Luque Mestanza 2023
+#valenti.luque@gmail.com
+#v_75
+#Utiliza cuidadosamente el agregar y eliminar filas y columnas
+#=====================================================================
+#Libre distribución 
+
+#COLORES / colors
+CV="\033[42m"
+CSUB="\033[4m"
+CREV="\033[7m"
+NC="\033[0m"
+CSTRONG="\033[1m"
+CA="\033[104m"
+
+#Colores de las columnas filas  opciones y funciones
+#This is the colors for rows columns options and functions
+#You can change this variables and prove  with your own style
+CCOLUMN="$CSTRONG$CV"
+CROW="$CSTRONG$CA"
+COPT="${CREV}"
+CFUN="\033[91m$CSTRONG"
+
+#Num decimales
+NDECIMAL=2
+
+#BACKUP
+DBACK=".tcalc_backup"
+
+#Revisar fichero necesario
+#si no esta bajarlo de internet
+if [ ! -f "tcalc_adv.sh" ]; then
+ printf "${CFUN}Download Complementary file\n${NC}"
+ #Dowload aditional file
+ wget  https://raw.githubusercontent.com/ValentinLuque/bash_utilities/main/tcalc_adv.sh
+ if [ $? -eq 1 ]; then 
+   printf "Failed to download file. Please we sure that you have\
+file tcalc_adv.sh on your PATH for working correctly\n"
+ else 
+   printf "Wait until file downloaded\n"
+   chmod +x tcalc_adv.sh
+   if [ $? -eq 0 ]; then
+   read -p "download Succesfuly  Press Intro to continue"
+    else
+      printf "\n\nThe file *** tcal_adv.sh *** is necessary to main program. \
+please download from github."
+      read -p "Press Intro to continue"
+    exit 1
+  fi 
+ fi 
+fi
+
+function abrir(){
+#los arrays multidimensionales no acaban de funcionar correctamente en bash
+#asi que lo que vamos a hacer es todo un proceso para poder hacer funcionar
+#el programa
+
+
+#si el fichero no existe crearlo
+
+if [ ! -f "${1}" ]; then
+ touch "${1}" 
+ read -p "Núm. Of Columns: " COLS
+ read -p "Núm. Of Rows: " FILAS
+
+#max. anchura que depende de la longitud del terminal
+ MAX_ANCH=$(echo `tput cols` / $COLS - 1 |bc)
+ printf "Max actual config. that depends of your screen columns is $MAX_ANCH\n" 
+ ancho=$MAX_ANCH
+
+ num_rows=$FILAS
+ num_columns=$COLS
+
+#================= SEPARADORES ==========
+f1="%$((${#num_rows}+1))s"
+f2="%${ancho}s"
+#=======================================
+
+for ((j=1;j<=${num_rows};j++)); do
+ 
+    for ((i=1;i<=${num_columns};i++)); do
+
+	printf "0:" >>"${1}"
+      #sleep 1
+    done
+   printf "\n" >>"${1}"
+   
+done 
+
+else
+ COLS=`head -n1 "${1}" |grep -o -i : |wc -l`
+ MAX_ANCH=$(echo `tput cols` / $COLS - 1 |bc)
+ ancho=$MAX_ANCH
+ 
+fi
+
+while true; do
+clear
+
+#Ctrl de las filas
+z=0
+  
+
+#Calcular el numero de filas y columnas
+COLS=`head -n1 "${1}" |grep -o -i : |wc -l`
+FILAS=`grep -i : "${1}" |wc -l` 
+
+num_rows=$FILAS
+num_columns=$COLS
+#================= SEPARADORES ==========
+f1="%$((${#num_rows}+1))s"
+f2="%${ancho}s"
+#=======================================
+
+#Proceso de dibujar en pantalla
+#======================================
+printf "$f1$CCOLUMN" ''
+for ((i=1;i<=num_columns;i++)); do
+    printf "$f2$CCOLUMN" $i 
+done
+printf "$NC$CROW"
+
+echo
+ #Necesario cambiar ${1} por $FICH para awk en calcula funciones
+ FICH="${1}"
+
+ cat "${1}" |while read linea
+  do
+    #columnas
+    z=`expr $z + 1`
+    #filas
+    printf "$f1$CROW" $z  && printf "$NC"
+     for ((l=1;l<=$COLS;l++)); do
+       valor=`echo $linea |cut -d":" -f${l}`  
+       calcular_funciones
+       if [ $funcion == "y" ]; then
+         printf "$CFUN$f2" "$valor" 
+         printf "$NC"
+        else
+ 	 printf "$f2" "$valor"
+      fi
+      #printf "Funcion $funcion"
+     done
+ echo 
+ printf "$CROW"
+ done
+
+ printf "$NC"
+#=================
+#Menu de opciones
+#=================
+
+  tput cup $(expr `tput lines` - 4) 0 && printf "$CCOLUMN" && read -p "COLUMN: (o → Options| CTRL + C → Exit):" C 
+  printf "$NC"
+   if [[ $C == 'o' ]] ; then 
+     posicion="tput cup $(expr `tput lines` - 4) 0"
+     $posicion  && printf "${COPT}| (0) +/- Col. Size  |\
+| (1) Col/ Rows Function | (2) Print 2 File | (3) Sequence | (4) Bash | (5) Comments | (b) Bak. File\
+ |(r) Restore |(h) Help| (q) Exit $NC" \
+&&  read -p "Opt: " OPT
+
+ case $OPT in
+
+      0 ) size ;;
+      1 ) exec ./tcalc_adv.sh "${1}" ;;     
+      2 ) Print "${1}" ;;
+      3 ) Sequence "${1}" ;;    
+      4 ) Bash "${1}" ;;
+      5 ) Comments "${1}" ;;
+      r ) recover "${1}" ;;
+      b ) Backup "${1}" ;;      
+      h ) Help ;;
+      q ) read -p "Delete temp files?(y) " OPT
+           if  [[ $OPT == "y" ]]; then
+		 find ./"${DBACK}" -mtime -1 -iname "${1}*" -exec echo "Borrando:" {} \; -exec rm {} \;
+               # read -p "Intro"      
+
+	 fi && exit 0 ;;
+	 * ) F="" && C="" ;;
+     esac
+  else
+    tput cup $(expr `tput lines` - 3) 0 && printf "$CROW" && read -p "ROW: " F && printf "$NC"
+    tput cup $(expr `tput lines` - 2) 0 && printf "$CSTRONG" && read -p "VALUE:(f=>functions) " V && printf "$NC"
+     [ $V == 'f' ] && funciones
+  fi
+
+#cambiamos valor en fichero
+  
+ cp "${1}" "${1}".bak
+ awk -v f=$F -v c=$C -v v="${V}" -F: -v OFS=: 'NR==f {$c=v}1' "${1}".bak >"${1}"
+
+done
+}
+
+#cambia el tamaño de las columnas
+function size(){
+ tput cup $(expr `tput lines` - 1) 0 && read -p "New Column Size: " ancho
+}
+
+#Crear ficheros .bak
+function Backup(){
+ cp "${1}" "${1}".backup
+}
+
+function funciones(){
+  tput cup $(expr `tput lines` - 2) 0 && printf "%0.s " {1..22} 
+ posicion="tput cup $(expr `tput lines` - 3) 0"
+  $posicion  && printf "| 0) Direct bc | 1) Sum/ Subst | 2)Multiply | 3) Division | 4) Summarize | \
+5) Maths "  && read -p "Opcion: " OPT
+  case $OPT  in
+    1) SIG=r ;;
+    2) SIG=m ;;
+    3) SIG=d ;;
+    4) SIG=s ;;
+    *) printf "Opcion incorrecta" ;;
+  esac
+
+ if [ $OPT -eq 5 ] || [ $OPT -eq 0 ]; then
+      if [ $OPT == 5 ]; then
+        Maths "${FICH}"
+       else
+         DirectBc "$FICH"
+       fi
+ else
+  #Control de no poner otro valor
+  if [ $OPT -lt 5 ]; then 
+   tput cup $(expr `tput lines` - 2) && read -p "Range1 Column 1 " RANGO1_C 
+   tput cup $(expr `tput lines` - 2) && read -p "Rango1    Row 1 " RANGO1_F
+   tput cup $(expr `tput lines` - 2) && read -p "Rango2 Column 2 " RANGO2_C 
+   tput cup $(expr `tput lines` - 2) && read -p "Rango2    Row 2 " RANGO2_F
+   V="=${RANGO1_C}_${RANGO1_F} ${RANGO2_C}_${RANGO2_F}${SIG}"
+  fi 
+fi
+}
+
+#genera los totales de las funciones para visualizarlos
+
+function calcular_funciones(){
+#Indicador que ha entrado en una funcion
+#para IMPRIMIR en otro color la funcion
+funcion="n"
+
+#primer valor
+if [[ ${valor:0:1} == "=" ]]; then
+  VALOR1=`echo ${valor:1} |cut -d" " -f1`
+  C1=`echo ${VALOR1}|cut -d"_" -f1`
+  F1=`echo ${VALOR1}|cut -d"_" -f2`
+
+  VALOR2=`echo ${valor::(-1)}|cut -d" " -f2`
+  C2=`echo ${VALOR2}|cut -d"_" -f1`
+  F2=`echo ${VALOR2}|cut -d"_" -f2`
+  
+  OPERACION=`echo ${valor:(-1)}`
+  
+	v1=`awk -F: -v F=$F1 -v C=$C1 'NR==F {print $C}' "$FICH"`
+        v2=`awk -F: -v F=$F2 -v C=$C2 'NR==F {print $C}' "$FICH"`
+
+
+  case $OPERACION in
+   "d" )valor=`echo "scale="$NDECIMAL";$v1 / $v2" |bc` && funcion="y";;
+   "m" )valor=`echo "$v1 * $v2" |bc`  && funcion="y" ;;
+   "r") valor=`echo "${v1} + ${v2}" |bc -l` && funcion="y" ;;
+   "s") if [ $C1 == $C2 ]; then
+          valor=`awk -F: -v C=$C1 -v FI=$F1 -v FF=$F2 'NR==FI,NR==FF{sum+=$C}END{print sum}' "${FICH}"`  
+        else
+	  COLSUM=`awk -F: -v F=$F1 '(NR==F) {print}' "$FICH"` 
+        valor=`echo "$COLSUM" |awk -F: -v C1=$C1 -v C2=$C2 '{for (y=C1;y<=C2;y++) sum+=$y;print sum;sum=0}'`
+       fi && funcion="y"  ;;
+esac
+
+fi
+}
+
+function backupt(){
+#crea una copia de los ultimos ficheros
+R=`date +%d%m%y_${RANDOM:0:3}`
+  if [ ! -d $DBACK  ]; then
+     mkdir "$DBACK"
+  fi
+  cp "${1}" "${DBACK}"/"${1}_$R"
+  
+}
+
+#Restaura el ultimo fichero
+function recover(){
+cd "${DBACK}"
+#echo "$PWD"
+ls -ltr |rev|cut -d" " -f1,2,3,4|rev >../recover.txt
+cd ..
+sed -i "1,3d" recover.txt
+cat -n recover.txt
+read -p "Chose File to Recover: " OPT
+FILE=`awk -v f=$OPT 'NR==f {print}' recover.txt`
+FILE=`echo $FILE |cut -d" " -f4`
+#printf "Fichero $FILE"
+#read -p "intro"
+cp "${DBACK}"/"${FILE}" "${1}"
+if [ $? -eq 1 ]; then
+ printf "Fallo en copia\n"
+ echo "${DBACK}"/"${FILE}"
+ printf "${1}" 
+ read -p "intro"
+fi 
+
+rm recover.txt  
+}
+
+#===========================================
+#Imprime en un fichero en vez de por pantalla
+#============================================
+function Print(){
+#Si existe el fichero borralo
+if [ -f "${1}".prt ] ; then
+  cp "${1}".prt "${1}".prt.bak
+  rm "${1}".prt
+fi
+#Ctrl de las filas
+z=0
+  
+
+#Calcular el numero de filas y columnas
+COLS=`head -n1 "${1}" |grep -o -i : |wc -l`
+FILAS=`grep -i : "${1}" |wc -l` 
+
+num_rows=$FILAS
+num_columns=$COLS
+#================= SEPARADORES ==========
+f1="%$((${#num_rows}+1))s"
+f2="%${ancho}s"
+#=======================================
+
+
+printf "$f1" '' >>"$FICH".prt
+for ((i=1;i<=num_columns;i++)); do
+    printf "$f2" $i >>"$FICH".prt
+done
+echo >>"${FICH}".prt
+ #Necesario cambiar ${1} por $FICH para awk en calcula funciones
+ FICH="${1}"
+
+ cat "${1}" |while read linea
+  do
+    #columnas
+    z=`expr $z + 1`
+    #filas
+    printf "$f1" $z >>"$FICH".prt
+     for ((l=1;l<=$COLS;l++)); do
+     valor=`echo $linea |cut -d":" -f${l}`  
+     calcular_funciones
+     printf "$f2" "$valor" >>"$FICH".prt 
+ done
+echo >>"$FICH".prt
+ done
+}
+
+#============== FIN FUNC PRINT ===========
+
+#Utiliza las funciones mathemáticas/ exponenciales de bc
+function Maths(){
+  tput cup $(expr `tput lines` - 3) 0 ; tput dch 40 
+  tput cup $(expr `tput lines` - 2) 0 ; tput dch 40 
+  tput cup $(expr `tput lines` - 3) 0 && printf "1 ) Square R. | 2) Syn |3) Cos | 4)Arcangent\
+ |5) l Natural Logarit. | 6) Exponential | 7)bessel (put n,x) | 0) Free bc| " && read -p "Opcion ?: " ACOL 
+
+tput cup $(expr `tput lines` - 3) 0 && tput dch 100
+tput cup $(expr `tput lines` - 3) 0 && read -p "Value: " value 
+case $ACOL in
+  1)  V=$(echo "scale=$NDECIMAL; sqrt($value)" |bc -l)  ;;
+  2)  V=$(echo "scale=$NDECIMAL; s($value)" |bc -l)  ;;
+  3)  V=$(echo "scale=$NDECIMAL; c($value)" |bc -l)  ;;
+  4)  V=$(echo "scale=$NDECIMAL; a($value)" |bc -l)  ;;
+  5)  V=$(echo "scale=$NDECIMAL; l($value)" |bc -l)  ;;
+  6)  V=$(echo "scale=$NDECIMAL; e($value)" |bc -l)  ;;
+  7)  V=$(echo "scale=$NDECIMAL; j($value)" |bc -l)  ;;
+  *) printf "Opcion incorrecta" ;;
+esac
+
+#cambiamos valor en fichero
+ cp "${1}" "${1}".bak
+ awk -v f=$F -v c=$C -v v="${V}" -F: -v OFS=: 'NR==f {$c=v}1' "${1}".bak >"${1}"
+ 
+}
+
+#calcula directamente desde bc
+function DirectBc(){
+#cambiamos valor en fichero
+tput cup $(expr `tput lines` - 3) 0 && tput dch 100
+tput cup $(expr `tput lines` - 3) 0 && read -p "Value: " value
+ V=$(echo "scale=$NDECIMAL; $value" |bc -l)  
+ cp "${1}" "${1}".bak
+ awk -v f=$F -v c=$C -v v="${V}" -F: -v OFS=: 'NR==f {$c=v}1' "${1}".bak >"${1}"
+}
+
+#Sequencia => dado una sequencia que le añadimos genera los valores en vertical
+#y/o en horizontal
+
+function Sequence(){
+
+tput cup $(expr `tput lines` - 4) 0 && tput dch 100
+tput cup $(expr `tput lines` - 3) 0 && tput dch 100
+tput cup $(expr `tput lines` - 2) 0 && tput dch 100
+tput cup $(expr `tput lines` - 1) 0 && tput dch 100
+tput cup $(expr `tput lines` - 3) 0 && read -p "Start Seq. At (Column:Row): " CR
+tput cup $(expr `tput lines` - 2) 0 && read -p "Sequence(separate by(:) " value
+tput cup $(expr `tput lines` - 1) 0 && read -p "Horizontal/Vertical (h/v): "  direction
+
+C=`echo $CR |cut -d: -f1`
+R=`echo $CR |cut -d: -f2`
+
+#num cols
+SEQ=`echo $value |awk -F: '{print NF}'`
+
+#copia seg ficher 
+
+for i in `seq $SEQ`; do 
+  cp "${1}" "${1}".bak
+  V=`echo "$value" | cut -d: -f$i `
+  awk -v r=$R -v c=$C -v v="${V}" -F: -v OFS=: 'NR==r {$c=v}1' "${1}".bak >"${1}"   
+  case $direction in
+     'h') C=`expr $C + 1` ;;
+     'v') R=`expr  $R + 1` ;;
+esac
+done
+}
+
+#Permite ejecutar un código Bash como username u otro
+function Bash(){
+  tput cup $(expr `tput lines` - 3) 0 && tput dch 100
+  tput cup $(expr `tput lines` - 3) 0 && read -p "(Column:Row)" CR
+  tput cup $(expr `tput lines` - 3) 0 && read -p "Bash Command: " Bash
+  value=`eval  $Bash`
+  
+  C=`echo $CR |cut -d: -f1`
+  R=`echo $CR |cut -d: -f2`
+  cp "${1}" "${1}".bak
+  awk -v r=$R -v c=$C -v v="${value}" -F: -v OFS=: 'NR==r {$c=v}1' "${1}".bak >"${1}"   
+}
+
+function Restore(){
+  cp "${1}".backup "${1}"  
+}
+
+
+function Comments(){
+#replace with your own editor if you want by default nano else vi 
+which nano 
+if [ $? -eq 1 ]; then 
+  EDITOR=vi
+  else 
+    EDITOR=nano
+fi
+
+#Genera un fichero de comentarios
+  [ ! -f "${1}".comments  ] && touch "${1}".comments
+while true; do 
+ clear
+  cat -n "${1}".comments 2>null
+  tput cup $(expr `tput lines` - 3) 0 && tput dch 100
+  tput cup $(expr `tput lines` - 3) 0 && printf "${CREV}(1) Add line |(2) Del line | (3) Edit Directly |(4) Del FICH| (5) Back ${NC}" && read -p "(Opcion)" OPT
+  case $OPT in
+    1) read -p "Comment:" Comment &&  printf "${Comment}\n" >>"${1}".comments  ;;
+    2) read -p "Number line to Delete " nline &&  sed -i "${nline}d" "${1}".comments  ;;
+    3) exec "${EDITOR}" "${1}".comments ;;
+    4) rm "${1}".comments ;;
+    5) break ;;
+    *) printf "Incorrect option" ;;
+  esac
+done
+} 
+
+function Help(){
+clear
+printf "Ayuda\n\n
+$0 is a minimalist but funcional spreedsheet for linux. Its at example of power of bash\n 
+and you can add your own scripts or modifiy it. ATENTION ITS IMPORTANT YOU DOWNLOAD THE ADDITIONAL FILE 'texcel_adv.sh' 
+ ***  wget  https://raw.githubusercontent.com/ValentinLuque/bash_utilities/main/tcalc_adv.sh ***
+ 
+His principals functions are:
+
+        1.-)Increment or decrement of the cels. You can move the size of the column.\
+ I suggerest a mininal large of terminal 100. But anyway is this functional ok with 80\
+ width or maybe 60.
+        2.-)Add and Delete Column . You can Increment Column and Delete column whatever\
+ you want. \
+If the spreedsheat show you error in syntax error or divided by zero is because\
+ you has formula and you had delete some column of row.
+        3.-) Add / Delete Row. You can Add a row o delete a row in a same as above.
+        4.-) You can insert a formulas. This basics formulas are Sumarize, sum and rest. Divided \
+and multiply. But there a much.
+        5.-) You can create a basically maths forms.
+        6.-) You can create you own maths with bc command in linux.
+        7.-) you can create a sequence of numbers o text. Its the best function because if you \
+have a large data you can put here separate by ':' and the system realocate this data in rows or\
+columns automátically.
+        8.-) You can put your own script bash functio in one cell. Like 'echo $PWD' or 'echo $USER'.
+        9.- You can restore the last action and only the one.
+	10.-)You can print in Human format if you want latter pass this to gnuplot or\
+whatever program o print directly. 
+	11 .-) You can create a file with comments about your spreedsheet
+	12.- ) You have back files when you chamge columns and rows
+        Basically these are the functions that all people daily needs but in text mode.\
+ The system not control buffer or scroll so if you have more that row terminal files \
+maybe the system is not functional but its why this that is minimalist and i want to put the \
+thinks clear, for other purposes you have many spreedsheats on the net. 
+        Enjoy it or explorer you own spreadsheet"
+read -p " Press intro to continue" OPT
+}
+
+
+
+#main  Program
+
+#Abrimos o generamos uno nuevo depende de la opcion
+if [ "$#" -eq 0 ]; then 
+  printf "Ejecuta $0 [NOMBRE_FICHERO]\n"
+  exit 1
+ else
+  abrir "${1}"
+fi
+exit 0
