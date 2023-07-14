@@ -29,6 +29,15 @@ NDECIMAL=2
 #BACKUP
 DBACK=".tcalc_backup"
 
+# EDITOR replace with your own editor if you want by default nano else vi 
+which nano 
+if [ $? -eq 1 ]; then 
+  EDITOR=vi
+  else 
+    EDITOR=nano
+fi
+
+
 #Revisar fichero necesario
 #si no esta bajarlo de internet
 if [ ! -f "tcalc_adv.sh" ]; then
@@ -157,7 +166,7 @@ echo
    if [[ $C == 'o' ]] ; then 
      posicion="tput cup $(expr `tput lines` - 4) 0"
      $posicion  && printf "${COPT}| (0) +/- Col. Size  |\
- (1) Col/ Rows Function | (2) Print 2 File | (3) Sequence | (4) Bash | (5) Comments | (b) Bak. File\
+ (1) Col/ Rows Function | (2) Print 2 File | (3) Sequence | (4) Bash | (5) Comments | (6) Show File | (b) Bak. File\
  |(r) Restore |(h) Help| (q) Exit $NC" \
 &&  read -p "Opt: " OPT
 
@@ -169,6 +178,7 @@ echo
       3 ) Sequence "${1}" ;;    
       4 ) Bash "${1}" ;;
       5 ) Comments "${1}" ;;
+      6 ) ShowFile "${1}" ;;
       r ) recover "${1}" ;;
       b ) Backup "${1}" ;;      
       h ) Help ;;
@@ -204,7 +214,18 @@ function Backup(){
  cp "${1}" "${1}".backup
 }
 
+
+function backupt(){
+#crea una copia de los ultimos ficheros
+R=`date +%d%m%y_${RANDOM:0:3}`
+  if [ ! -d $DBACK  ]; then
+     mkdir "$DBACK"
+  fi
+  cp "${1}" "${DBACK}"/"${1}_$R" 
+}
+
 function funciones(){
+  backupt "${FICH}"
   tput cup $(expr `tput lines` - 2) 0 && printf "%0.s " {1..22} 
  posicion="tput cup $(expr `tput lines` - 3) 0"
   $posicion  && printf "| 0) Direct bc | 1) Sum/ Subst | 2)Multiply | 3) Division | 4) Summarize | \
@@ -242,7 +263,7 @@ function calcular_funciones(){
 #para IMPRIMIR en otro color la funcion
 funcion="n"
 
-#primer valor
+#primer  valor
 if [[ ${valor:0:1} == "=" ]]; then
   VALOR1=`echo ${valor:1} |cut -d" " -f1`
   C1=`echo ${VALOR1}|cut -d"_" -f1`
@@ -273,15 +294,6 @@ esac
 fi
 }
 
-function backupt(){
-#crea una copia de los ultimos ficheros
-R=`date +%d%m%y_${RANDOM:0:3}`
-  if [ ! -d $DBACK  ]; then
-     mkdir "$DBACK"
-  fi
-  cp "${1}" "${DBACK}"/"${1}_$R"
-  
-}
 
 #Restaura el ultimo fichero
 function recover(){
@@ -289,21 +301,27 @@ cd "${DBACK}"
 echo "$PWD"
 ls -ltr |rev|cut -d" " -f1,2,3,4|rev >../recover.txt
 cd ..
-sed -i "1,3d" recover.txt
+sed -i "1,1d" recover.txt
 cat -n recover.txt
 read -p "Chose File to Recover: " OPT
+if [[ ! -z "$OPT" ]]; then
 FILE=`awk -v f=$OPT 'NR==f {print}' recover.txt`
 FILE=`echo $FILE |cut -d" " -f4`
 #printf "Fichero $FILE"
 #read -p "intro"
 cp "${DBACK}"/"${FILE}" "${1}"
 if [ $? -eq 1 ]; then
- printf "Fallo en copia\n"
+ printf "Fallo en la restauración \n"
  echo "${DBACK}"/"${FILE}"
  printf "${1}" 
- read -p "intro"
-fi 
+ read -p "Press intro"
+fi
 
+else
+
+ printf "You are not select a file"
+ read -p " Press intro " O
+fi
 rm recover.txt  
 }
 
@@ -359,6 +377,7 @@ echo >>"$FICH".prt
 
 #Utiliza las funciones mathemáticas/ exponenciales de bc
 function Maths(){
+  backupt "${1}"
   tput cup $(expr `tput lines` - 3) 0 ; tput dch 40 
   tput cup $(expr `tput lines` - 2) 0 ; tput dch 40 
   tput cup $(expr `tput lines` - 3) 0 && printf "1 ) Square R. | 2) Syn |3) Cos | 4)Arcangent\
@@ -385,6 +404,7 @@ esac
 
 #calcula directamente desde bc
 function DirectBc(){
+backupt "${1}"
 #cambiamos valor en fichero
 tput cup $(expr `tput lines` - 3) 0 && tput dch 100
 tput cup $(expr `tput lines` - 3) 0 && read -p "Value: " value
@@ -397,7 +417,7 @@ tput cup $(expr `tput lines` - 3) 0 && read -p "Value: " value
 #y/o en horizontal
 
 function Sequence(){
-
+backupt "${1}"
 tput cup $(expr `tput lines` - 4) 0 && tput dch 100
 tput cup $(expr `tput lines` - 3) 0 && tput dch 100
 tput cup $(expr `tput lines` - 2) 0 && tput dch 100
@@ -427,6 +447,7 @@ done
 
 #Permite ejecutar un código Bash como username u otro
 function Bash(){
+  backupt "${1}"
   tput cup $(expr `tput lines` - 3) 0 && tput dch 100
   tput cup $(expr `tput lines` - 3) 0 && read -p "(Column:Row)" CR
   tput cup $(expr `tput lines` - 3) 0 && read -p "Bash Command: " Bash
@@ -444,13 +465,6 @@ function Restore(){
 
 
 function Comments(){
-#replace with your own editor if you want by default nano else vi 
-which nano 
-if [ $? -eq 1 ]; then 
-  EDITOR=vi
-  else 
-    EDITOR=nano
-fi
 
 #Genera un fichero de comentarios
   [ ! -f "${1}".comments  ] && touch "${1}".comments
@@ -468,6 +482,15 @@ while true; do
     *) printf "Incorrect option" ;;
   esac
 done
+} 
+
+#Show file
+function ShowFile(){
+ clear
+ cat  "${1}"
+ echo 
+ read -p "Edit? (y)" O
+ [ $O == y ] && exec ${EDITOR} "${1}" 
 } 
 
 function Help(){
