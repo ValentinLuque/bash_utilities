@@ -157,7 +157,7 @@ echo
    if [[ $C == 'o' ]] ; then 
      posicion="tput cup $(expr `tput lines` - 4) 0"
      $posicion  && printf "${COPT}| (0) +/- Col. Size  |\
-| (1) Col/ Rows Function | (2) Print 2 File | (3) Sequence | (4) Bash | (5) Comments | (b) Bak. File\
+ (1) Col/ Rows Function | (2) Print 2 File | (3) Sequence | (4) Bash | (5) Comments | (b) Bak. File\
  |(r) Restore |(h) Help| (q) Exit $NC" \
 &&  read -p "Opt: " OPT
 
@@ -286,7 +286,7 @@ R=`date +%d%m%y_${RANDOM:0:3}`
 #Restaura el ultimo fichero
 function recover(){
 cd "${DBACK}"
-#echo "$PWD"
+echo "$PWD"
 ls -ltr |rev|cut -d" " -f1,2,3,4|rev >../recover.txt
 cd ..
 sed -i "1,3d" recover.txt
