@@ -4,7 +4,7 @@
 
 PUERTO=22
 REMOTO="valentin@192.168.1.135:/home/valentin/scripts"
-PASSWD="valentin"
+PASSWD=""
 
 function ayuda(){
   printf "\nUtiliza $0 [-ud] [fichero] para copiar remotamente"
