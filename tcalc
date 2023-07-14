@@ -2,7 +2,7 @@
 #Hoja de Cálculo Minimalista y potente
 #Valentín Luque Mestanza 2023
 #valenti.luque@gmail.com
-#v_75
+#v_1.0
 #Utiliza cuidadosamente el agregar y eliminar filas y columnas
 #=====================================================================
 #Libre distribución 
@@ -30,7 +30,7 @@ NDECIMAL=2
 DBACK=".tcalc_backup"
 
 # EDITOR replace with your own editor if you want by default nano else vi 
-which nano 
+which nano >/dev/null 
 if [ $? -eq 1 ]; then 
   EDITOR=vi
   else 
