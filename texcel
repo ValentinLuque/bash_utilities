@@ -2,10 +2,8 @@
 #Hoja de Cálculo Minimalista y potente
 #Valentín Luque Mestanza 2023
 #valenti.luque@gmail.com
+#v_75
 #Utiliza cuidadosamente el agregar y eliminar filas y columnas
-#=====================================================================
-#ATTENTION LA FUNCION ADD ROW NEED TO MAKE 3 INTROS FOR REFRESH CHANGES
-#you need to download textel:adv.sh for create and delete rows and columns
 #=====================================================================
 #Libre distribución 
 
@@ -30,6 +28,22 @@ NDECIMAL=2
 
 #BACKUP
 DBACK=".textel_backup"
+
+#Revisar fichero necesario
+#si no esta bajarlo de internet
+if [ ! -f "texcel_adv.sh" ]; then
+ printf "${CFUN}Bajando Fichero Complementario\n${NC}"
+ #Dowload aditional file
+ wget  https://raw.githubusercontent.com/ValentinLuque/bash_utilities/main/texcel_adv.sh
+ if [ $? -eq 1 ]; then 
+   printf "Failed to download file. Please we sure that you have\
+file texcel_adv.sh on your PATH for working correctly\n"
+ else 
+   printf "Wait until file downloaded\n"
+   chmod +x texcel_adv.sh
+   read -p "Download file successfuly. Press Intro to continue"
+  fi 
+fi
 
 #Guarda el fichero
 function guarda(){
@@ -295,7 +309,7 @@ R=`date +%d%m%y_${RANDOM:0:3}`
 function recover(){
 cd "${DBACK}"
 #echo "$PWD"
-ls -lat |rev|cut -d" " -f1,2,3,4|rev >../recover.txt
+ls -ltr |rev|cut -d" " -f1,2,3,4|rev >../recover.txt
 cd ..
 sed -i "1,3d" recover.txt
 cat -n recover.txt
@@ -561,7 +575,7 @@ clear
 printf "Ayuda\n\n
 $0 is a minimalist but funcional spreedsheet for linux. Its at example of power of bash\n 
 and you can add your own scripts or modifiy it. ATENTION ITS IMPORTANT YOU DOWNLOAD THE ADDITIONAL FILE 'texcel_adv.sh' 
- ***  wget  https://github.com/ValentinLuque/bash_utilities/blob/main/texcel_adv.sh ***
+ ***  wget  https://raw.githubusercontent.com/ValentinLuque/bash_utilities/main/texcel_adv.sh ***
  
 His principals functions are:
 
