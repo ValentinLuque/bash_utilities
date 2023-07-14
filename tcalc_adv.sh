@@ -4,7 +4,7 @@
 
 #BACKUP
 #If you change this var here too in the main archive
-DBACK=".textel_backup"
+DBACK=".tcalc_backup"
 
 FICH="${1}"
 CREV="\033[7m"
@@ -114,5 +114,5 @@ case $OPT in
   4 ) AddRow "${1}" ;;
   5 ) DelRow "${1}" ;;
 esac
-./texcel "${1}"
+./tcalc "${1}"
 exit 0
