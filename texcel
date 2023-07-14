@@ -159,27 +159,27 @@ echo
    if [[ $C == 'o' ]] ; then 
      posicion="tput cup $(expr `tput lines` - 4) 0"
      $posicion  && printf "${COPT}| (0) +/- Col. Size  |\
-| (1) Col/ Rows Function | (6) Print 2 File | (7) Sequence | (8) Bash | (9) Comments | (b) Bak. File\
+| (1) Col/ Rows Function | (2) Print 2 File | (3) Sequence | (4) Bash | (5) Comments | (b) Bak. File\
  |(r) Restore |(h) Help| (q) Exit $NC" \
 &&  read -p "Opt: " OPT
 
  case $OPT in
 
       0 ) size ;;
-      "10" ) AddColumnFirst "${1}" ;;
-      2 ) AddColumn "${1}" ;;
-      3 ) DelColumn "${1}" ;;
-      4 ) AddRow "${1}"  ;;
-      5 ) DelRow "${1}" ;;
-      6 ) Print "${1}" ;;
-      7 ) Sequence "${1}" ;;    
-      8 ) Bash "${1}" ;;
-      9 ) Comments "${1}" ;;
+     # 1 ) AddColumnFirst "${1}" ;;
+     #2 2 ) AddColumn "${1}" ;;
+     # 3 ) DelColumn "${1}" ;;
+     # 4 ) AddRow "${1}"  ;;
+     # 5 ) DelRow "${1}" ;;
+      1 ) exec ./texcel_adv.sh "${1}" ;;     
+      2 ) Print "${1}" ;;
+      3 ) Sequence "${1}" ;;    
+      4 ) Bash "${1}" ;;
+      5 ) Comments "${1}" ;;
       r ) recover "${1}" ;;
       b ) Backup "${1}" ;;
-      1 ) exec ./texcel_adv.sh "${1}" ;;
+      
       h ) Help ;;
-#      u ) Undo "${1}" ;;
       q ) read -p "Delete temp files?(y) " OPT
            if  [[ $OPT == "y" ]]; then
 		 find ./"${DBACK}" -mtime -1 -iname "${1}*" -exec echo "Borrando:" {} \; -exec rm {} \;
@@ -528,19 +528,6 @@ function Restore(){
   cp "${1}".backup "${1}"  
 }
 
-function Undo(){
-  cp "${1}".bak "${1}"  
-}
-
-##function main(){
-#  tput cup $(expr `tput lines` - 3) 0 && read -p "COLUMNA: (o → Opciones | CTRL + C → Exit):" C
-#  if [[ $C == 'o' ]] ; then opciones 
-#  else
-#    tput cup $(expr `tput lines` - 2) 0 && read -p "FILA: " F
-#    tput cup $(expr `tput lines` - 1) 0 && read -p "VALOR: " V
-#    calcula
-#  fi
-#}
 
 function Comments(){
 #replace with your own editor if you want by default nano else vi 
@@ -573,7 +560,10 @@ function Help(){
 clear
 printf "Ayuda\n\n
 $0 is a minimalist but funcional spreedsheet for linux. Its at example of power of bash\n 
-and you can add your own scripts or modifiy it. His principals functions are:
+and you can add your own scripts or modifiy it. ATENTION ITS IMPORTANT YOU DOWNLOAD THE ADDITIONAL FILE 'texcel_adv.sh' 
+ ***  wget  https://github.com/ValentinLuque/bash_utilities/blob/main/texcel_adv.sh ***
+ 
+His principals functions are:
 
         1.-)Increment or decrement of the cels. You can move the size of the column.\
  I suggerest a mininal large of terminal 100. But anyway is this functional ok with 80\

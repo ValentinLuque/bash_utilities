@@ -3,8 +3,15 @@
 #Agregar y eliminar columnas
 
 #BACKUP
+#If you change this var here too in the main archive
 DBACK=".textel_backup"
+
 FICH="${1}"
+CREV="\033[7m"
+NC="\033[0m"
+
+#===============
+
 function backupt(){
 #crea una copia de los ultimos ficheros
 R=`date +%d%m%y_${RANDOM:0:3}`
@@ -96,7 +103,7 @@ fi
 tput cup $(expr `tput lines` - 4) 0 ; tput dch 100
 tput cup $(expr `tput lines` - 3) 0 ; tput dch 100
 tput cup $(expr `tput lines` - 2) 0 ; tput dch 100
-tput cup $(expr `tput lines` - 4) 0 && printf "| (1) Add Col At First| (2) Add Col Whatever |(3) Del Col | (4) Add Row | (5) Del Row |"
+tput cup $(expr `tput lines` - 4) 0 && printf "${CREV}| (1) Add Col At First| (2) Add Col Whatever |(3) Del Col | (4) Add Row | (5) Del Row |${NC}"
 
 read -p " Option: " OPT
 
