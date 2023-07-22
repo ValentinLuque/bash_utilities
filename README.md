@@ -21,8 +21,8 @@ disco - Show efective information about your Disk
 
 papelera - Send files directly to trash not remove definitely
 
-montar_iso.sh - monta imagenes iso para ver su contenido
+montar_iso.sh - mount ISO images
 
-sinonimo - busca sinonimos y los muestra en la shell
+sinonimo - search sinonims in ES and show in shell
 
 
