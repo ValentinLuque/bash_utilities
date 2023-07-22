@@ -1,0 +1,16 @@
+#!/bin/bash
+#A simple real script to know sinonims of word
+
+URL=https://www.sinonimosonline.com/
+
+if [[ $# -ne 1 ]]; then
+  printf "Utiliza $0  [sinónimo]"
+  exit 1
+fi
+
+wget ${URL}/"${1}"
+grep -i "${1} es sinónimo de" "${1}" |sed "1d" |cut -d. -f2
+rm "${1}"
+
+exit 0
+
