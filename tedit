@@ -1,0 +1,180 @@
+#!/bin/bash
+#Editor de texto
+
+largo=`tput cols`
+alto=`tput lines`
+
+#Reset numero y reverso para mostrar info en color blanco
+NC="\033[0m"
+REV=`echo -e "\e[7m"`
+FROJO="\033[41m"
+VERDE="\033[32m"
+FVERDE="\033[42m"
+TENUE="\33[2m"
+BLINK="\033[5m"
+
+CURSOR=" → "
+CURSOR="_"
+BUFFER=""
+FILA=0
+COLUMNA=0
+
+#Donde empieza a escribir el editor
+INI_C=0
+INI_F=0
+
+clear
+#Ejecutar con parámetro
+if [ ${#} -ne 1 ]; then
+  printf "Execute $0 [FILE_NAME]"
+  exit 1
+else
+  if [ ! -f "${1}" ]; then
+   touch "${1}"
+
+  else
+    cat  "${1}"
+    FILA=`cat "${1}"|wc -l`
+    tput cup $FILA 0 
+  fi
+fi
+
+
+function PrintBuffer(){
+#revisamos si entramos en edicion entonces no escribir nada
+
+if [[ $entrar != "y" ]] ; then
+
+BUFFER=$BUFFER$modo
+tput cup $FILA $COLUMNA && printf "$modo"
+COLUMNA=`expr $COLUMNA + 1`
+else
+ entrar=""
+fi
+
+}
+
+function insercion(){
+if [ ${#} -eq 2 ] ;then
+  BUFFER=""
+  cat "${2}"
+   entrar=y
+fi
+
+case $modo in 
+ $'\177' )
+    if [ $COLUMNA -gt 0 ]; then
+     clear 
+     COLUMNA=`expr $COLUMNA - 1`
+     BUFFER=${BUFFER::-1}
+     tput clear
+       [[ $edit == "" ]] && cat "${1}"
+      echo "$BUFFER"
+      tput cup $FILA $COLUMNA
+    fi
+;;
+
+#Si introducimos un intro aumenta la fila
+  $'\n' ) 
+  #no escribe en pantalla
+  FILA=$(($FILA + 1))
+  COLUMNA=0
+  tput cup $FILA $COLUMNA
+  printf "$BUFFER\n">>"${1}"
+  BUFFER=""
+ ;;
+
+*)  #escribe en pantalla
+      PrintBuffer
+ ;;
+esac
+}
+
+function arriba(){
+if [ $FILA -gt 0 ];then
+clear
+echo && cat -n 1 "${1}" 2>/dev/null
+FILA=`expr $FILA - 1`
+tput cup $FILA $COLUMNA && printf "${FROJO}${CURSOR}${NC}"
+fi
+}
+
+function abajo(){
+
+clear
+cat -n 1 "${1}" 2>/dev/null
+FILA=`expr $FILA + 1`
+tput cup $FILA $COLUMNA && printf "${FROJO}${CURSOR}${NC}"
+}
+function dcha(){
+
+#SFILA=`sed -n "$FILA p" "${1}"`
+tput cup `expr $alto - 3` 0 && printf "${FROJO}LINE $FILA CHANGE:${NC}"
+tput cup `expr $alto - 2` 0 && printf "${FVERDE}            BY:${NC}"
+tput cup `expr $alto - 3` 15  && read -p  "" ORIGEN
+tput cup `expr $alto - 2` 15  && read -p  "" DESTINO
+sed -i -r "${FILA}s/$ORIGEN/$DESTINO/" "${1}"
+clear
+FILA=`cat "${1}" |wc -l`
+insercion $FILA "${1}"
+
+}
+
+function izda(){
+  tput cup `expr $alto - 3` 0 && printf "${FROJO}(b) Borrar / ${FVERDE} {a) Agregar linea?:${NC} "
+  tput cup `expr $alto - 2` 0 && read -p "" OPT
+  case $OPT in
+    b ) sed -i.bak "${FILA}d" "${1}" ;;
+    a ) #Sed no funciona bien con variables asi que tenemos que agregar y 
+        #como pone dos lineas en blanco luego eliminar una
+        sed -i.bak $"${FILA}i \\\n" "${1}" 
+        sed -i.bak "${FILA}d" "${1}" ;; 
+       
+    * ) printf "Opcion incorrecta" ;;
+   esac   
+clear
+FILA=`cat "${1}" |wc -l`
+insercion $FILA "${1}"
+}
+
+
+
+function teclas(){
+#https://stackoverflow.com/questions/10679188/casing-arrow-keys-in-bash
+#el valor para que coja \n (Enter es N mayúscula no n minúscula)
+#showkey -a //ASCII MODE
+
+ escape_char=$(printf "\u1b")
+ read -rsN1 modo # get 1 character
+ if [[ $modo == $escape_char ]]; then
+   read -rsn2 modo # read 2 more chars
+  fi
+ case $modo in
+  
+         '[A') arriba "${1}" ;;
+         '[B') abajo "${1}" ;;
+         '[C') dcha "${1}" 2>/dev/null ;;
+         '[D') izda "${1}" ;; 
+ 	 '[H') modificacion ;;
+         '[5' ) plugins;;
+	 '[F')  exit 1 ;; 
+	  *) insercion "${1}" ;; 
+esac
+}
+
+
+function pie(){
+ #Muestra la información en el pie de página
+ tput cup $(tput lines) 0 && for i in $(seq 1 `echo $(tput cols)`); do printf "%0.s${REV} "; done 
+ tput cup $(tput lines) 0 && printf "Fila:$FILA Columna:$COLUMNA |Buffer:`echo ${BUFFER}|wc -L`  |Ctrl + C o FIN  → Salir |(?) → Ayuda ${NC}"
+}
+
+
+
+while true; do
+ teclas "${1}"
+ pie
+done
+
+exit 0
+
