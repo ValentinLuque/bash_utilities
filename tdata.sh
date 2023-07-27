@@ -373,8 +373,8 @@ if [[ $OPT != q ]]; then
     if [ $OPT == "y" ]; then
       #revisar relacionar y borrar el fichero y la bbdd
       CHILD=`grep "${OTABLA}" "${1}" |cut -d: -f2`
-      printf "Tabla es $CHILD"
-      sed -i.bak "/${CHILD}/d" "${1}"
+      [[ $DEB == y ]] &&  printf "Tabla es $CHILD"
+      sed -i.bak "/${CHILD}/d" "${1}" 2>/dev/null
       #rm "${CHILD}"
       rm "${OTABLA}"
       if [[ $? -eq 1 ]]; then
