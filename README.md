@@ -25,4 +25,12 @@ montar_iso.sh - mount ISO images
 
 sinonimo - search sinonims in ES and show in shell
 
+tdata.sh - Database relational create in bash
+
+tdquery.sh -Complement querys for tdata.sh
+
+tedit - Minimalist editor for tdata.sh
+
+
+
 
