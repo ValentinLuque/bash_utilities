@@ -81,7 +81,8 @@ while true; do
           FIELD=`cat texto.txt|tr "\n" "|"` 
           rm texto.txt
          fi
-     CAMPO="${CAMPO}":`echo -e "${FIELD}"`
+       CAMPO="${CAMPO}":`echo -e "${FIELD}"`
+       clear
      fi 
      
 
@@ -196,8 +197,14 @@ function DeleteValue(){
    if  [ $OPT != "r" ]; then
       DEL=`awk -F: -v OPT=$OPT '{ if ($1==OPT) {print}}' "${1}"`
       #DEL=`grep -E "${OPT}:" "${1}"` 
-      printf "Deleting RECORD $DEL\n"
-      sed -i.bak "/${OPT}:/d" "${1}"
+      read -p  "Deleting RECORD $DEL (y)" O
+      if [[ $O == y ]]; then
+      #awk -v n=$OPT 'NR == n {next} {print}' "${1}" 
+      sed -i.bak "/${DEL}/d" "${1}"
+      printf "Deleted Record"
+      else
+        printf "Record not deleted\n"
+     fi
      read -p "Press INTRO to Continue" O
   fi
 done
