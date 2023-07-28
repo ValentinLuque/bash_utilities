@@ -130,22 +130,26 @@ function ModifyValue(){
           read -p "For change Press (y) otherwise ENTER " OPTION
           if [[ $OPTION == "y" ]] ; then 
           #Apuntamos el numero correcto de la fila
-          FILA=`grep -Fn "${OPT}:" "${1}" | cut -d: -f1`
+          FILA=`awk -F: -v OPT=$OPT '{ if ($1==OPT) {print}}' "${1}" |cut -d: -f1` 
+          #FILA=`grep -Fn "${OPT}:" "${1}" | cut -d: -f1`
  	    if [ `echo "$R" |rev| cut -c1`  != "t" ]; then
             
               read -p "New Value for ${R::-1}: " FIELD 
               #change value of column and row
                [[ $DEB == y ]] && printf "Fila $FILA Columna $j valor $FIELD\n"
               cp "${1}" "${1}".bak
-	      awk -v f=$FILA -v c=$j -v s="${FIELD}" -F: -v OFS=: 'NR==f {$c=s}1' "${1}".bak>"${1}"
-              read -p "Intro..."    
+	    
+              [[ $DEB == y ]] && awk -F: -v OFS=: -v FILA=$FILA -v COL=$j -v FIELD="${FIELD}" '($1==FILA) {$COL=FIELD}1'
+              awk -F: -v OFS=: -v FILA=$FILA -v COL=$j -v FIELD="${FIELD}" '($1==FILA) {$COL=FIELD}1' "${1}".bak>"${1}"
+             read -p "Intro..."    
             else
               #change | for \n in feld and put in file
               printf "${MOD}" | cut -d: -f$j |tr "|" "\n" >>texto.txt
               #cat texto.txt|tr "|" "\n" >>texto.txt.bak
               #execute tedit for edit
               ./tedit texto.txt
-  
+              clear
+              echo
              #When finish change \n for |
              FIELD=`cat texto.txt|tr "\n" "|"`
              printf "$FIELD"
@@ -153,9 +157,12 @@ function ModifyValue(){
              rm texto.txt
              #change value of column and row
 	     cp "${1}" "${1}".bak
-	     awk -v f=$FILA -v c=$j -v s="${FIELD}" -F: -v OFS=: 'NR==f {$c=s}1' "${1}".bak>"${1}"
-            fi
-          fi
+             [[ $DEB == y ]] && awk -F: -v OFS=: -v FILA=$FILA -v COL=$j -v FIELD="${FIELD}" '($1==FILA) {$COL=FIELD}1'
+             awk -F: -v OFS=: -v FILA=$FILA -v COL=$j -v FIELD="${FIELD}" '($1==FILA) {$COL=FIELD}1' "${1}".bak>"${1}"
+             printf "\n"  
+           fi
+         
+         fi
 
      fi #FID
       done      
@@ -187,8 +194,8 @@ function DeleteValue(){
    
    [[ $OPT == "q" ]] && break
    if  [ $OPT != "r" ]; then
-     
-      DEL=`grep -E "${OPT}:" "${1}"` 
+      DEL=`awk -F: -v OPT=$OPT '{ if ($1==OPT) {print}}' "${1}"`
+      #DEL=`grep -E "${OPT}:" "${1}"` 
       printf "Deleting RECORD $DEL\n"
       sed -i.bak "/${OPT}:/d" "${1}"
      read -p "Press INTRO to Continue" O
