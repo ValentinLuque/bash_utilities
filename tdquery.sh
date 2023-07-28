@@ -10,7 +10,7 @@ COLS=`tput cols`
 COL=""
 
 #DEBUG (y => Activate debug)
-DEB=n
+DEB=y
 
 #File Query
 FQ=dtQuery
@@ -385,11 +385,14 @@ else
 
      [[ $OPT == "q" ]] && break 
      if [[ $OPT != "r" ]]; then
+        CAMPO=""
+        FIELD=""
         INDICE="${OPT}"
         grep  -i "$OPT" "${TABLE}"
         printf "\n"
         read -p "Choose ID: " PFILA
-        VALUE=`grep -i "$PFILA:" "${TABLE}"`
+        VALUE=`awk -F: -v FILA=$PFILA '{if ($1==FILA) {print}}' "${TABLE}"`
+        #VALUE=`grep -i "$PFILA:" "${TABLE}"`
         [[ $DEB == "y" ]] && printf "\nValor de VALUE $VALUE\n\n"
         
          #Recorremos NUM registros
@@ -398,19 +401,21 @@ else
         NRTABLE=`head -n1 "${TABLE}" | awk -F: '{printf NF}'`
         [[ $DEB == "y" ]] && printf "Fila $FILA | Num. de reg. FILA: $NRFILA. | Num Reg. TABLE $NRTABLE| PFILA=${PFILA} \n\n" 
         for ((i=1; i<`expr $NRFILA + 1`; i++)); do
-         VALOR=`echo "${FILA}" |cut -d: -f$i`
-         VALUE=`echo "${VALUE}" |cut -d: -f$i` 
+         VALOR=`echo "${FILA}" | cut -d: -f$i`
+         TVALUE=`echo "${VALUE}" |cut -d':' -f$i` 
          [[ $DEB == "y" ]] && printf "Valor es $VALOR\n"
-         [[ $DEB == "y" ]] && printf "Value es $VALUE\n"
+         [[ $DEB == "y" ]] && printf "Value es $TVALUE\n"
          
          #choose the column
-         TEST=`awk -F: -v txt="$VALOR" 'FNR==1{for(c=1;$c!=txt;c++);next} {print $c}' "${TABLE}"`
-         FIELD=`printf "$TEST" | awk -v ROW=$VALUE 'NR==ROW {print}'`
+         #TEST=`awk -F: -v txt="${VALOR}" 'FNR==1{for(c=1;$c!=txt;c++);next} {print $c}' "${TABLE}"`
+         #FIELD=`printf "$TEST" | awk -v ROW=$TVALUE '{if (NR==ROW) {print}}'`
+         #FIELD=`awk -F: -v OFS=: -v ROW="${TVALUE}" '{if (NR==ROW) {print}}' "${TABLE}"`
            [[ $DEB == "y" ]] && read -p "Intro"
          if [[ -z  "${CAMPO}" ]]; then
-            CAMPO="${FIELD}"
+             CAMPO="${TVALUE}"
          else
-           CAMPO="${CAMPO}:${FIELD}" 
+           [[ $DEB == y ]] && printf "C: ${CAMPO} F: ${TVALUE}\n"
+           CAMPO="${CAMPO}:${TVALUE}" 
         fi
           [[ $DEB == "y" ]] && printf "\n** CAMPOS $CAMPO **\n"
   
@@ -427,7 +432,7 @@ printf "${NAME}" >>"${QueryCAB}"
 echo >>"${QueryCAB}"
 printf "$CABECERA" >>"${QueryCAB}"
 echo >>"${QueryCAB}"
-printf "$CAMPO" >>"${QueryCAB}"
+printf "${CAMPO}" >>"${QueryCAB}"
 [[ $DEB == "y" ]] && printf "ALERTA\n "
 column -s ":" -t "${QueryCAB}"
  [[ $DEB == "y" ]] && read -p "Continua"
