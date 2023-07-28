@@ -107,7 +107,7 @@ function ModifyValue(){
   if [ -s $VALUE ]; then 
       tail  -n +2 "${1}"
      else
-      grep -i "${VALUE}" "${1}"
+      grep -E "${VALUE}" "${1}"
   fi
   printf  "\nChoose Value (index) to Modify | First Column\n"
   read -p "(r) Repeat Search | (q) Exit " OPT    
