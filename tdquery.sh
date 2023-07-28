@@ -10,7 +10,7 @@ COLS=`tput cols`
 COL=""
 
 #DEBUG (y => Activate debug)
-DEB=y
+DEB=n
 
 #File Query
 FQ=dtQuery
