@@ -114,8 +114,8 @@ function ModifyValue(){
    
    [[ $OPT == "q" ]] && break
    if  [ $OPT != "r" ]; then
-     
-      MOD=`grep "${OPT}:" "${1}"` 
+      MOD=`awk -F: -v OPT=$OPT '{ if ($1==OPT) {print}}' "${1}"`
+      #MOD=`grep -E "${OPT}:" "${1}"` 
       NREG=`head -n 1 "${1}" |awk -F: '{printf NF -1}'`
       NREG=`expr $NREG + 1`
       [[ $DEB == y ]] && echo "Registros $NREG"
